@@ -2,14 +2,15 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
 
-// Firebase configuration - Replace with your actual config
+// Firebase configuration
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyBDApl55HzQwwZIpTadqiY5QF3HaocjFnU",
+  authDomain: "app-de-treino-5089f.firebaseapp.com",
+  projectId: "app-de-treino-5089f",
+  storageBucket: "app-de-treino-5089f.firebasestorage.app",
+  messagingSenderId: "957956937303",
+  appId: "1:957956937303:web:357fb52c66dc7d4daab512",
+  measurementId: "G-H402BJHLFY"
 };
 
 export const app = initializeApp(firebaseConfig);
