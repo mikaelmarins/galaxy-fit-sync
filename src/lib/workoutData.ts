@@ -2,8 +2,8 @@
 export const WORKOUT_PLAN = {
   PUSH1: { 
     id: 'PUSH1', 
-    dayName: 'Segunda', 
-    name: 'PUSH 1: Peito Tensão', 
+    dayName: 'Terça', 
+    name: 'PUSH 1: Peito Tensão',
     focus: 'Peito Superior (Carga)', 
     color: 'from-[hsl(var(--workout-push1-from))] to-[hsl(var(--workout-push1-to))]', 
     exercises: [
@@ -17,8 +17,8 @@ export const WORKOUT_PLAN = {
   },
   PULL1: { 
     id: 'PULL1', 
-    dayName: 'Terça', 
-    name: 'PULL 1: Costas Largura', 
+    dayName: 'Quarta', 
+    name: 'PULL 1: Costas Largura',
     focus: 'Dorsais & Espessura', 
     color: 'from-[hsl(var(--workout-pull1-from))] to-[hsl(var(--workout-pull1-to))]', 
     exercises: [
@@ -32,8 +32,8 @@ export const WORKOUT_PLAN = {
   },
   LEGS1: { 
     id: 'LEGS1', 
-    dayName: 'Quarta', 
-    name: 'LEGS 1: Manutenção Força', 
+    dayName: 'Segunda', 
+    name: 'LEGS 1: Manutenção Força',
     focus: 'Quadríceps (Volume Baixo)', 
     color: 'from-[hsl(var(--workout-legs1-from))] to-[hsl(var(--workout-legs1-to))]', 
     exercises: [
@@ -45,8 +45,8 @@ export const WORKOUT_PLAN = {
   },
   PUSH2: { 
     id: 'PUSH2', 
-    dayName: 'Quinta', 
-    name: 'PUSH 2: Peito Metabólico', 
+    dayName: 'Sexta', 
+    name: 'PUSH 2: Peito Metabólico',
     focus: 'Variação & Calistenia', 
     color: 'from-[hsl(var(--workout-push2-from))] to-[hsl(var(--workout-push2-to))]', 
     exercises: [
@@ -60,8 +60,8 @@ export const WORKOUT_PLAN = {
   },
   PULL2: { 
     id: 'PULL2', 
-    dayName: 'Sexta', 
-    name: 'PULL 2: Costas Variação', 
+    dayName: 'Sábado', 
+    name: 'PULL 2: Costas Variação',
     focus: 'Planos & Pegadas', 
     color: 'from-[hsl(var(--workout-pull2-from))] to-[hsl(var(--workout-pull2-to))]', 
     exercises: [
@@ -75,8 +75,8 @@ export const WORKOUT_PLAN = {
   },
   LEGS2: { 
     id: 'LEGS2', 
-    dayName: 'Sábado', 
-    name: 'LEGS 2: Manutenção Posterior', 
+    dayName: 'Quinta', 
+    name: 'LEGS 2: Manutenção Posterior',
     focus: 'Cadeia Posterior & Carga', 
     color: 'from-[hsl(var(--workout-legs2-from))] to-[hsl(var(--workout-legs2-to))]', 
     exercises: [

@@ -176,7 +176,8 @@ export function ActiveWorkout({ def, onFinish, onCancel }: ActiveWorkoutProps) {
                       target={ex.reps}
                       done={sets[`${ex.id}_${idx}`]?.done}
                       onCheck={(w, r) => doSet(ex.id, idx, w, r, ex.rest, ex.name)}
-                      initialW={sets[`${ex.id}_0`]?.w}
+                      initialW={sets[`${ex.id}_${idx}`]?.w || sets[`${ex.id}_0`]?.w}
+                      initialR={sets[`${ex.id}_${idx}`]?.r}
                     />
                   ))}
                 </div>
@@ -250,11 +251,12 @@ interface SetRowProps {
   done?: boolean;
   onCheck: (w: number, r: number) => void;
   initialW?: number;
+  initialR?: number;
 }
 
-function SetRow({ idx, target, done, onCheck, initialW }: SetRowProps) {
+function SetRow({ idx, target, done, onCheck, initialW, initialR }: SetRowProps) {
   const [w, sw] = useState<string>(initialW?.toString() || '');
-  const [r, sr] = useState<string>(target.includes('-') ? target.split('-')[1] : target);
+  const [r, sr] = useState<string>(initialR?.toString() || (target.includes('-') ? target.split('-')[1] : target));
   
   if (done) {
     return (
@@ -271,19 +273,20 @@ function SetRow({ idx, target, done, onCheck, initialW }: SetRowProps) {
       <span className="w-6 text-center font-bold text-muted-foreground text-sm">#{idx + 1}</span>
       <input
         type="number"
-        inputMode="decimal"
+        inputMode="numeric"
         placeholder="kg"
         value={w}
         onChange={(e) => sw(e.target.value)}
-        className="flex-1 bg-card border border-border rounded-xl py-3 text-center font-bold text-lg text-foreground focus:border-primary outline-none transition-all shadow-sm placeholder:text-muted-foreground"
+        className="flex-1 bg-card border-2 border-border rounded-xl py-3 text-center font-bold text-lg text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-sm placeholder:text-muted-foreground"
       />
+      <span className="text-muted-foreground font-bold text-sm">×</span>
       <input
         type="number"
         inputMode="numeric"
         placeholder="reps"
         value={r}
         onChange={(e) => sr(e.target.value)}
-        className="w-20 bg-card border border-border rounded-xl py-3 text-center font-bold text-lg text-foreground focus:border-primary outline-none transition-all shadow-sm placeholder:text-muted-foreground"
+        className="w-20 bg-card border-2 border-border rounded-xl py-3 text-center font-bold text-lg text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-sm placeholder:text-muted-foreground"
       />
       <button
         disabled={!w}
