@@ -47,12 +47,32 @@ const Index = () => {
 
   // Auth
   useEffect(() => {
-    signInAnonymously(auth).catch(console.error);
+    console.log('Iniciando autenticação Firebase...');
+    
+    // Set timeout fallback in case auth takes too long
+    const timeout = setTimeout(() => {
+      console.log('Auth timeout - continuando sem Firebase');
+      setLoading(false);
+    }, 5000);
+    
+    signInAnonymously(auth)
+      .then(() => console.log('SignIn anônimo iniciado'))
+      .catch((err) => {
+        console.error('Erro ao fazer signIn:', err);
+        setLoading(false);
+      });
+    
     const unsubscribe = onAuthStateChanged(auth, (u) => {
+      console.log('Auth state changed:', u?.uid || 'sem usuário');
+      clearTimeout(timeout);
       setUser(u);
-      if (u) setLoading(false);
+      setLoading(false);
     });
-    return () => unsubscribe();
+    
+    return () => {
+      clearTimeout(timeout);
+      unsubscribe();
+    };
   }, []);
 
   // Listen to workout logs
