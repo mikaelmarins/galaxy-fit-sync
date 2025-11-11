@@ -1,73 +1,142 @@
-# Welcome to your Lovable project
+# Workout Tracker - Treino Pessoal 💪
 
-## Project info
+Um aplicativo moderno de treino pessoal com sincronização offline, desenvolvido especialmente para uso no Galaxy S24 Ultra.
 
-**URL**: https://lovable.dev/projects/dd78dc14-a739-454c-9132-ba347af08f44
+## ✨ Características
 
-## How can I edit this code?
+### 🏋️ Treinos Completos
+- **6 dias de treino** (Segunda a Sábado)
+- Push 1 & 2 (Peito, Ombros, Tríceps)
+- Pull 1 & 2 (Costas, Bíceps)
+- Legs 1 & 2 (Quadríceps, Posteriores, Panturrilha)
+- Rotina de Core/Abdômen opcional
 
-There are several ways of editing your application.
+### 📱 Offline-First
+- **100% funcional offline**
+- Fila de sincronização automática
+- Persistência local com localforage
+- Indicador visual de status de sincronização
 
-**Use Lovable**
+### ⏱️ Timer Inteligente
+- Timer automático de descanso
+- **Som de alerta ao fim do descanso**
+- **Vibração do dispositivo**
+- Opção de adicionar +15s
+- Exibição visual com progresso circular
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/dd78dc14-a739-454c-9132-ba347af08f44) and start prompting.
+### 💾 Persistência Automática
+- Salva estado do treino ativo
+- Recupera treino se fechar o app
+- Histórico completo de treinos
+- Dados armazenados localmente e na nuvem
 
-Changes made via Lovable will be committed automatically to this repo.
+### 📊 Progresso Visual
+- Gráficos de evolução de carga (Recharts)
+- Acompanhamento de exercícios principais
+- Estatísticas semanais
+- Contador de treinos totais
 
-**Use your preferred IDE**
+### 🎨 Design Premium
+- Interface moderna e fluida
+- Otimizado para Galaxy S24 Ultra
+- Animações suaves
+- Dark mode ready
+- Gradientes personalizados por treino
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🚀 Começando
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### 1. Configure o Firebase
+Siga o guia completo em **[SETUP.md](./SETUP.md)** para configurar sua conta Firebase.
 
-Follow these steps:
+### 2. Instale as dependências
+```bash
+npm install
+```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### 3. Configure suas credenciais
+Edite `src/lib/firebase.ts` com suas credenciais do Firebase.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+### 4. Execute o projeto
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## 📖 Como Usar
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. **Dashboard**: Veja o treino sugerido do dia e suas estatísticas
+2. **Iniciar Treino**: Clique no card do treino para começar
+3. **Durante o Treino**:
+   - Preencha peso e repetições para cada série
+   - Timer de descanso inicia automaticamente
+   - Use "REPETIR 1ª SÉRIE" para copiar dados
+   - Adicione core/abdômen no final (opcional)
+4. **Finalizar**: Clique em "FINALIZAR TREINO" quando terminar
+5. **Offline**: Treino é salvo localmente e sincronizado quando online
 
-**Use GitHub Codespaces**
+## 🛠️ Tecnologias
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- React 18 + TypeScript
+- Vite (build tool)
+- Tailwind CSS (design system)
+- Firebase (Firestore + Auth)
+- localforage (offline storage)
+- Recharts (gráficos)
+- Web Audio API (som)
+- Lucide React (ícones)
 
-## What technologies are used for this project?
+## 📁 Estrutura do Projeto
 
-This project is built with:
+```
+src/
+├── components/          # Componentes React
+│   ├── ActiveWorkout.tsx   # Tela de treino ativo
+│   ├── Dashboard.tsx       # Dashboard principal
+│   ├── ProgressView.tsx    # Gráficos de progresso
+│   ├── HistoryView.tsx     # Histórico de treinos
+│   ├── OfflineIndicator.tsx # Indicador offline
+│   └── NavBar.tsx          # Barra de navegação
+├── lib/
+│   ├── firebase.ts         # Configuração Firebase
+│   ├── offlineQueue.ts     # Fila de sincronização
+│   ├── workoutData.ts      # Dados dos treinos
+│   └── utils/              # Utilitários
+├── hooks/
+│   ├── useBeep.ts          # Hook de som/vibração
+│   └── useWorkoutPersist.ts # Persistência do treino
+└── pages/
+    └── Index.tsx           # Página principal
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```
 
-## How can I deploy this project?
+## 🔧 Personalização
 
-Simply open [Lovable](https://lovable.dev/projects/dd78dc14-a739-454c-9132-ba347af08f44) and click on Share -> Publish.
+### Modificar Exercícios
+Edite `src/lib/workoutData.ts`
 
-## Can I connect a custom domain to my Lovable project?
+### Alterar Cores
+Edite `src/index.css` (variáveis CSS)
 
-Yes, you can!
+### Ajustar Timer
+Modifique os valores de `rest` em cada exercício
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 📝 Roadmap Futuro
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- [ ] Adicionar gráficos de volume total
+- [ ] Sistema de PRs (Personal Records)
+- [ ] Notas por treino
+- [ ] Exportar dados para CSV
+- [ ] Notificações de treino
+- [ ] Modo escuro/claro manual
+
+## 🐛 Problemas Conhecidos
+
+Veja [SETUP.md](./SETUP.md) para troubleshooting.
+
+## 📄 Licença
+
+Projeto pessoal para uso próprio.
+
+---
+
+**Desenvolvido com ❤️ para treinos sérios** 🏋️‍♂️
+
