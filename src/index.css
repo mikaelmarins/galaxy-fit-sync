@@ -7,7 +7,9 @@ All colors MUST be HSL.
 */
 
 @layer base {
+  /* Force dark mode by default */
   :root {
+    color-scheme: dark;
     --background: 248 15% 98%;
     --foreground: 220 20% 10%;
 

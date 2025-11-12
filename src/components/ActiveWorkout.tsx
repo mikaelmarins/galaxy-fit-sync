@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Clock, X, CheckCircle, ChevronDown, CheckSquare, Flame, Trophy } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 import { WorkoutDefinition, CORE_ROUTINE } from '@/lib/workoutData';
 import { useBeep } from '@/hooks/useBeep';
 import { useWorkoutPersist } from '@/hooks/useWorkoutPersist';
+import { SetInputSheet } from './SetInputSheet';
 
 interface ActiveWorkoutProps {
   def: WorkoutDefinition;
@@ -41,6 +42,20 @@ export function ActiveWorkout({ def, onFinish, onCancel }: ActiveWorkoutProps) {
   const [showCore, setShowCore] = useState(false);
   const [confirmModal, setConfirmModal] = useState(false);
   const [expandedEx, setExpandedEx] = useState<string | null>(null);
+  const [editingSet, setEditingSet] = useState<{ exerciseId: string; setIndex: number } | null>(null);
+
+  // Get recent weights for each exercise
+  const recentWeights = useMemo(() => {
+    const weights: Record<string, number[]> = {};
+    Object.entries(sets).forEach(([key, data]) => {
+      const [exerciseId] = key.split('_');
+      if (!weights[exerciseId]) weights[exerciseId] = [];
+      if (data.w > 0 && !weights[exerciseId].includes(data.w)) {
+        weights[exerciseId].push(data.w);
+      }
+    });
+    return weights;
+  }, [sets]);
 
   // Elapsed timer
   useEffect(() => {
@@ -72,15 +87,20 @@ export function ActiveWorkout({ def, onFinish, onCancel }: ActiveWorkoutProps) {
     }
   }, [sets, elapsed, def.id, start, saveState, isLoading]);
 
-  const doSet = (eid: string, idx: number, w: number, r: number, rest: number, name: string) => {
+  const doSet = (eid: string, idx: number, w: number, r: number, rest: number, name: string, totalSets: number) => {
     setSets((p) => ({ ...p, [`${eid}_${idx}`]: { w, r, done: true } }));
-    if (rest > 0) setTimer({ total: rest, end: new Date(Date.now() + rest * 1000), name });
+    
+    // Only start timer if NOT the last set of the exercise
+    const isLastSet = idx === totalSets - 1;
+    if (rest > 0 && !isLastSet) {
+      setTimer({ total: rest, end: new Date(Date.now() + rest * 1000), name });
+    }
   };
 
   const markAll = (ex: WorkoutDefinition['exercises'][0]) => {
     const firstSet = sets[`${ex.id}_0`];
     if (!firstSet?.w || !firstSet?.r) return alert('Preencha a 1ª série.');
-    for (let i = 1; i < ex.sets; i++) doSet(ex.id, i, firstSet.w, firstSet.r, 0, ex.name);
+    for (let i = 1; i < ex.sets; i++) doSet(ex.id, i, firstSet.w, firstSet.r, 0, ex.name, ex.sets);
     setExpandedEx(null);
   };
 
@@ -175,9 +195,9 @@ export function ActiveWorkout({ def, onFinish, onCancel }: ActiveWorkoutProps) {
                       idx={idx}
                       target={ex.reps}
                       done={sets[`${ex.id}_${idx}`]?.done}
-                      onCheck={(w, r) => doSet(ex.id, idx, w, r, ex.rest, ex.name)}
-                      initialW={sets[`${ex.id}_${idx}`]?.w || sets[`${ex.id}_0`]?.w}
-                      initialR={sets[`${ex.id}_${idx}`]?.r}
+                      onEdit={() => setEditingSet({ exerciseId: ex.id, setIndex: idx })}
+                      weight={sets[`${ex.id}_${idx}`]?.w}
+                      reps={sets[`${ex.id}_${idx}`]?.r}
                     />
                   ))}
                 </div>
@@ -240,6 +260,31 @@ export function ActiveWorkout({ def, onFinish, onCancel }: ActiveWorkoutProps) {
       {/* Modals */}
       {timer && <RestModal timer={timer} onClose={() => setTimer(null)} onAdd={() => setTimer((p) => p && { ...p, end: new Date(p.end.getTime() + 15000) })} />}
       {confirmModal && <ConfirmModal onCancel={() => setConfirmModal(false)} onConfirm={finishWorkout} />}
+      
+      {/* Set Input Sheet */}
+      {editingSet && (() => {
+        const ex = def.exercises.find(e => e.id === editingSet.exerciseId);
+        if (!ex) return null;
+        
+        const setKey = `${editingSet.exerciseId}_${editingSet.setIndex}`;
+        const currentSet = sets[setKey];
+        
+        return (
+          <SetInputSheet
+            isOpen={true}
+            onClose={() => setEditingSet(null)}
+            onSave={(w, r) => {
+              doSet(editingSet.exerciseId, editingSet.setIndex, w, r, ex.rest, ex.name, ex.sets);
+              setEditingSet(null);
+            }}
+            setNumber={editingSet.setIndex + 1}
+            initialWeight={currentSet?.w || sets[`${editingSet.exerciseId}_0`]?.w}
+            initialReps={currentSet?.r}
+            targetReps={ex.reps}
+            recentWeights={recentWeights[editingSet.exerciseId] || []}
+          />
+        );
+      })()}
     </div>
   );
 }
@@ -249,53 +294,38 @@ interface SetRowProps {
   idx: number;
   target: string;
   done?: boolean;
-  onCheck: (w: number, r: number) => void;
-  initialW?: number;
-  initialR?: number;
+  onEdit: () => void;
+  weight?: number;
+  reps?: number;
 }
 
-function SetRow({ idx, target, done, onCheck, initialW, initialR }: SetRowProps) {
-  const [w, sw] = useState<string>(initialW?.toString() || '');
-  const [r, sr] = useState<string>(initialR?.toString() || (target.includes('-') ? target.split('-')[1] : target));
-  
-  if (done) {
+function SetRow({ idx, target, done, onEdit, weight, reps }: SetRowProps) {
+  if (done && weight && reps) {
     return (
-      <div className="flex justify-between p-3 text-sm bg-green-100 text-green-800 font-bold rounded-xl items-center animate-in fade-in duration-200">
+      <button
+        onClick={onEdit}
+        className="w-full flex justify-between p-4 text-sm bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 font-bold rounded-2xl items-center animate-in fade-in duration-200 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors border-2 border-green-200 dark:border-green-800"
+      >
         <span className="opacity-70">#{idx + 1}</span>
-        <span>{w}kg × {r}</span>
-        <CheckCircle size={18} fill="currentColor" className="text-green-600" />
-      </div>
+        <span className="text-base">{weight}kg × {reps} reps</span>
+        <CheckCircle size={20} fill="currentColor" className="text-green-600 dark:text-green-400" />
+      </button>
     );
   }
   
   return (
-    <div className="flex items-center gap-3">
-      <span className="w-6 text-center font-bold text-muted-foreground text-sm">#{idx + 1}</span>
-      <input
-        type="number"
-        inputMode="numeric"
-        placeholder="kg"
-        value={w}
-        onChange={(e) => sw(e.target.value)}
-        className="flex-1 bg-card border-2 border-border rounded-xl py-3 text-center font-bold text-lg text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-sm placeholder:text-muted-foreground"
-      />
-      <span className="text-muted-foreground font-bold text-sm">×</span>
-      <input
-        type="number"
-        inputMode="numeric"
-        placeholder="reps"
-        value={r}
-        onChange={(e) => sr(e.target.value)}
-        className="w-20 bg-card border-2 border-border rounded-xl py-3 text-center font-bold text-lg text-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-sm placeholder:text-muted-foreground"
-      />
-      <button
-        disabled={!w}
-        onClick={() => onCheck(Number(w) || 0, Number(r) || 0)}
-        className="bg-primary disabled:bg-secondary disabled:text-muted-foreground text-primary-foreground p-3.5 rounded-xl transition-all active:scale-95 shadow-sm"
-      >
-        <CheckCircle size={22} />
-      </button>
-    </div>
+    <button
+      onClick={onEdit}
+      className="w-full flex items-center justify-between p-4 bg-secondary/50 hover:bg-secondary border-2 border-border rounded-2xl transition-all active:scale-98 shadow-sm"
+    >
+      <span className="font-bold text-muted-foreground text-base">#{idx + 1}</span>
+      <span className="text-muted-foreground text-sm">
+        {weight && reps ? `${weight}kg × ${reps}` : 'Tocar para registrar'}
+      </span>
+      <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+        <CheckCircle size={20} className="text-primary" />
+      </div>
+    </button>
   );
 }
 
