@@ -9,12 +9,13 @@ interface DashboardProps {
 
 export function Dashboard({ onStart, history, workoutsThisWeek }: DashboardProps) {
   const today = new Date().getDay(); // 0=Dom, 1=Seg, ...
-  let sugId: WorkoutId = 'PUSH1'; // Default Seg
-  if (today === 2) sugId = 'PULL1';
-  if (today === 3) sugId = 'LEGS1';
-  if (today === 4) sugId = 'PUSH2';
-  if (today === 5) sugId = 'PULL2';
-  if (today === 6) sugId = 'LEGS2';
+  let sugId: WorkoutId = 'LEGS1'; // Default
+  if (today === 1) sugId = 'LEGS1'; // Segunda
+  if (today === 2) sugId = 'PUSH1'; // Terça
+  if (today === 3) sugId = 'PULL1'; // Quarta
+  if (today === 4) sugId = 'LEGS2'; // Quinta
+  if (today === 5) sugId = 'PUSH2'; // Sexta
+  if (today === 6) sugId = 'PULL2'; // Sábado
   
   // Se já treinou hoje, sugere o próximo dia da sequência
   if (history.length > 0 && history[0].endTime?.seconds) {

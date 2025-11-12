@@ -63,7 +63,7 @@ export function SetInputSheet({
       onClick={onClose}
     >
       <div 
-        className="fixed bottom-0 inset-x-0 bg-card rounded-t-[2rem] shadow-2xl animate-in slide-in-from-bottom duration-300 max-h-[85vh] overflow-y-auto"
+        className="fixed bottom-0 inset-x-0 bg-card rounded-t-[2rem] shadow-2xl animate-in slide-in-from-bottom duration-300 max-h-[80vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
