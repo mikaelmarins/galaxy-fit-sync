@@ -78,7 +78,7 @@ export function SetInputSheet({
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-4 space-y-6">
           {/* Weight Input */}
           <div className="space-y-3">
             <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
@@ -115,10 +115,10 @@ export function SetInputSheet({
             <label className="text-sm font-bold text-muted-foreground uppercase tracking-wider">
               Repetições (meta: {targetReps})
             </label>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => incrementReps(-1)}
-                className="w-16 h-16 bg-secondary hover:bg-secondary/80 rounded-2xl font-black text-2xl text-foreground transition-colors active:scale-95 shadow-sm"
+                className="w-14 h-14 flex-shrink-0 bg-secondary hover:bg-secondary/80 rounded-xl font-black text-2xl text-foreground transition-colors active:scale-95 shadow-sm"
               >
                 −
               </button>
@@ -127,11 +127,11 @@ export function SetInputSheet({
                 inputMode="numeric"
                 value={reps}
                 onChange={(e) => setReps(e.target.value)}
-                className="flex-1 bg-secondary/50 border-2 border-border rounded-2xl py-6 text-center font-black text-4xl text-foreground focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all shadow-sm"
+                className="flex-1 min-w-0 bg-secondary/50 border-2 border-border rounded-2xl py-6 text-center font-black text-4xl text-foreground focus:border-primary focus:ring-4 focus:ring-primary/20 outline-none transition-all shadow-sm"
               />
               <button
                 onClick={() => incrementReps(1)}
-                className="w-16 h-16 bg-secondary hover:bg-secondary/80 rounded-2xl font-black text-2xl text-foreground transition-colors active:scale-95 shadow-sm"
+                className="w-14 h-14 flex-shrink-0 bg-secondary hover:bg-secondary/80 rounded-xl font-black text-2xl text-foreground transition-colors active:scale-95 shadow-sm"
               >
                 +
               </button>
