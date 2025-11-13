@@ -37,9 +37,9 @@ export function SetInputSheet({
   }, [isOpen, initialWeight, initialReps, defaultReps]);
 
   const handleSave = () => {
-    const w = parseFloat(weight) || 0;
-    const r = parseInt(reps) || 0;
-    if (w >= 0 && r >= 1) {
+    const w = parseFloat(weight);
+    const r = parseInt(reps);
+    if (!isNaN(w) && !isNaN(r) && w >= 0 && r >= 1) {
       onSave(w, r);
       onClose();
     }
@@ -141,15 +141,17 @@ export function SetInputSheet({
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4">
             <button
+              type="button"
               onClick={onClose}
               className="flex-1 py-5 bg-secondary hover:bg-secondary/80 text-foreground rounded-2xl font-bold text-lg transition-colors"
             >
               Cancelar
             </button>
             <button
+              type="button"
               onClick={handleSave}
               disabled={!weight || !reps}
-              className="flex-1 py-5 bg-primary hover:bg-primary/90 disabled:bg-secondary disabled:text-muted-foreground text-primary-foreground rounded-2xl font-bold text-lg transition-all active:scale-95 shadow-lg shadow-primary/30 flex items-center justify-center gap-2"
+              className="flex-1 py-5 bg-primary hover:bg-primary/90 disabled:bg-secondary disabled:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground rounded-2xl font-bold text-lg transition-all active:scale-95 shadow-lg shadow-primary/30 flex items-center justify-center gap-2"
             >
               <CheckCircle size={22} />
               Registrar
