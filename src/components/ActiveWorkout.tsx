@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Clock, X, CheckCircle, ChevronDown, CheckSquare, Flame, Trophy } from 'lucide-react';
-import { Timestamp } from 'firebase/firestore';
 import { WorkoutDefinition, CORE_ROUTINE } from '@/lib/workoutData';
 import { useBeep } from '@/hooks/useBeep';
 import { useWorkoutPersist } from '@/hooks/useWorkoutPersist';
@@ -110,8 +109,8 @@ export function ActiveWorkout({ def, onFinish, onCancel }: ActiveWorkoutProps) {
     onFinish({
       workoutId: def.id,
       workoutName: def.name,
-      startTime: Timestamp.fromDate(start),
-      endTime: Timestamp.now(),
+      startTime: start,
+      endTime: new Date(),
       durationSeconds: elapsed,
       coreDone,
       exercises: def.exercises
