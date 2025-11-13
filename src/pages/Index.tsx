@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { signInAnonymously, onAuthStateChanged, User } from 'firebase/auth';
-import { collection, addDoc, query, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
-import { auth, db, appId } from '@/lib/firebase';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import type { User } from '@supabase/supabase-js';
 import { syncQueue, addToQueue } from '@/lib/offlineQueue';
 import { WorkoutId } from '@/lib/workoutData';
 import { OfflineIndicator } from '@/components/OfflineIndicator';
@@ -13,6 +13,7 @@ import { NavBar } from '@/components/NavBar';
 import { WORKOUT_PLAN } from '@/lib/workoutData';
 
 const Index = () => {
+  const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [view, setView] = useState('dashboard');
   const [activeId, setActiveId] = useState<WorkoutId | null>(null);
@@ -37,7 +38,7 @@ const Index = () => {
   // Auto-sync when coming online
   useEffect(() => {
     if (online && user) {
-      syncQueue(user.uid).then((count) => {
+      syncQueue(user.id).then((count) => {
         if (count > 0) {
           console.log(`Sincronizados ${count} treino(s)`);
         }
@@ -47,58 +48,75 @@ const Index = () => {
 
   // Auth
   useEffect(() => {
-    console.log('Iniciando autenticação Firebase...');
-    
-    // Set timeout fallback in case auth takes too long
-    const timeout = setTimeout(() => {
-      console.log('Auth timeout - continuando sem Firebase');
-      setLoading(false);
-    }, 5000);
-    
-    signInAnonymously(auth)
-      .then(() => console.log('SignIn anônimo iniciado'))
-      .catch((err) => {
-        console.error('Erro ao fazer signIn:', err);
-        setLoading(false);
-      });
-    
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      console.log('Auth state changed:', u?.uid || 'sem usuário');
-      clearTimeout(timeout);
-      setUser(u);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
       setLoading(false);
     });
-    
-    return () => {
-      clearTimeout(timeout);
-      unsubscribe();
-    };
-  }, []);
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+      
+      if (!session) {
+        navigate('/auth');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   // Listen to workout logs
   useEffect(() => {
     if (!user) return;
     
-    const q = query(
-      collection(db, `artifacts/${appId}/users/${user.uid}/workout_logs`),
-      orderBy('endTime', 'desc')
-    );
-    
-    const unsubscribe = onSnapshot(
-      q,
-      { includeMetadataChanges: true },
-      (snapshot) => {
-        setHistory(
-          snapshot.docs.map((d) => ({
-            id: d.id,
-            ...d.data(),
-            _fromCache: snapshot.metadata.fromCache
-          }))
-        );
+    const fetchHistory = async () => {
+      const { data, error } = await supabase
+        .from('workout_logs')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('end_time', { ascending: false });
+
+      if (error) {
+        console.error('Erro ao carregar histórico:', error);
+        return;
       }
-    );
-    
-    return () => unsubscribe();
+
+      const logs = data.map(log => ({
+        id: log.id,
+        workoutId: log.workout_id,
+        workoutName: log.workout_name,
+        startTime: new Date(log.start_time),
+        endTime: new Date(log.end_time),
+        durationSeconds: log.duration_seconds,
+        exercises: log.exercises,
+        userWeight: log.user_weight
+      }));
+      
+      setHistory(logs);
+    };
+
+    fetchHistory();
+
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel('workout_logs_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'workout_logs',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          fetchHistory();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const start = (id: WorkoutId) => {
@@ -109,51 +127,76 @@ const Index = () => {
   const finish = async (data: any) => {
     if (!user) return;
     
+    const workoutLog = {
+      user_id: user.id,
+      workout_id: data.workoutId,
+      workout_name: data.workoutName,
+      start_time: data.startTime.toISOString(),
+      end_time: data.endTime.toISOString(),
+      duration_seconds: data.durationSeconds,
+      exercises: data.exercises,
+      user_weight: data.userWeight
+    };
+
     try {
       if (navigator.onLine) {
-        await addDoc(
-          collection(db, `artifacts/${appId}/users/${user.uid}/workout_logs`),
-          { ...data, userId: user.uid }
-        );
+        const { error } = await supabase
+          .from('workout_logs')
+          .insert([workoutLog]);
+        
+        if (error) throw error;
       } else {
-        await addToQueue(data);
+        await addToQueue(workoutLog);
       }
       setView('dashboard');
       setActiveId(null);
     } catch (e) {
       console.error('Erro ao salvar treino:', e);
       // Try to save offline if online save fails
-      await addToQueue(data);
+      await addToQueue(workoutLog);
       setView('dashboard');
       setActiveId(null);
     }
   };
 
-  // Calculate workouts this week
-  const workoutsThisWeek = history.filter((h) => {
-    if (!h.endTime?.seconds) return false;
-    const d = new Date(h.endTime.seconds * 1000);
-    const now = new Date();
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
-    return d >= startOfWeek;
+  const today = new Date().getDay(); // 0=sun, 1=mon, ..., 6=sat
+  // Days: mon=1, tue=2, wed=3, thu=4, fri=5, sat=6
+  const dayMap: Record<number, WorkoutId | null> = {
+    0: null, // Sunday
+    1: 'LEGS1', // Monday
+    2: 'PUSH1', // Tuesday
+    3: 'PULL1', // Wednesday
+    4: 'LEGS2', // Thursday
+    5: 'PUSH2', // Friday
+    6: 'PULL2'  // Saturday
+  };
+
+  const suggestedId = dayMap[today];
+
+  const workoutsThisWeek = history.filter((log) => {
+    const logTime = new Date(log.endTime).getTime();
+    const now = Date.now();
+    const sevenDaysAgo = now - 7 * 24 * 3600 * 1000;
+    return logTime >= sevenDaysAgo;
   }).length;
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-background text-muted-foreground font-medium">
-        Carregando...
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Carregando...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/20">
+    <div className="min-h-screen bg-background pb-20">
       <OfflineIndicator online={online} />
       
       {view === 'dashboard' && (
-        <Dashboard
+        <Dashboard 
           onStart={start}
           history={history}
           workoutsThisWeek={workoutsThisWeek}
@@ -164,25 +207,32 @@ const Index = () => {
         <ActiveWorkout
           def={WORKOUT_PLAN[activeId]}
           onFinish={finish}
-          onCancel={() => setView('dashboard')}
+          onCancel={() => {
+            setActiveId(null);
+            setView('dashboard');
+          }}
         />
       )}
       
       {view === 'history' && (
-        <HistoryView
+        <HistoryView 
           history={history}
           onBack={() => setView('dashboard')}
         />
       )}
       
       {view === 'progress' && (
-        <ProgressView
+        <ProgressView 
           history={history}
           onBack={() => setView('dashboard')}
         />
       )}
       
-      <NavBar view={view} setView={setView} activeId={activeId} />
+      <NavBar 
+        view={view}
+        setView={setView}
+        activeId={activeId}
+      />
     </div>
   );
 };

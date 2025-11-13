@@ -1,6 +1,5 @@
 import localforage from 'localforage';
-import { collection, addDoc } from 'firebase/firestore';
-import { db, appId } from './firebase';
+import { supabase } from '@/integrations/supabase/client';
 
 interface QueuedWorkout {
   id: string;
@@ -43,10 +42,11 @@ export async function syncQueue(userId: string): Promise<number> {
 
   for (const item of queue) {
     try {
-      await addDoc(
-        collection(db, `artifacts/${appId}/users/${userId}/workout_logs`),
-        { ...item.data, userId, syncedAt: new Date() }
-      );
+      const { error } = await supabase
+        .from('workout_logs')
+        .insert([{ ...item.data, user_id: userId }]);
+      
+      if (error) throw error;
       syncedCount++;
     } catch (error) {
       console.error('Erro ao sincronizar item:', error);
