@@ -10,7 +10,9 @@ import { ActiveWorkout } from '@/components/ActiveWorkout';
 import { ProgressView } from '@/components/ProgressView';
 import { HistoryView } from '@/components/HistoryView';
 import { NavBar } from '@/components/NavBar';
+import { WorkoutEditModal } from '@/components/WorkoutEditModal';
 import { WORKOUT_PLAN } from '@/lib/workoutData';
+import { toast } from 'sonner';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -20,6 +22,7 @@ const Index = () => {
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [online, setOnline] = useState(navigator.onLine);
+  const [editingWorkout, setEditingWorkout] = useState<any>(null);
 
   // Online/Offline detection
   useEffect(() => {
@@ -145,17 +148,56 @@ const Index = () => {
           .insert([workoutLog]);
         
         if (error) throw error;
+        toast.success('Treino salvo com sucesso!');
       } else {
         await addToQueue(workoutLog);
+        toast.success('Treino salvo offline. Será sincronizado quando voltar online.');
       }
       setView('dashboard');
       setActiveId(null);
     } catch (e) {
       console.error('Erro ao salvar treino:', e);
-      // Try to save offline if online save fails
       await addToQueue(workoutLog);
+      toast.error('Erro ao salvar. Treino salvo offline.');
       setView('dashboard');
       setActiveId(null);
+    }
+  };
+
+  const updateWorkout = async (updatedWorkout: any) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('workout_logs')
+        .update({
+          exercises: updatedWorkout.exercises,
+          user_weight: updatedWorkout.userWeight
+        })
+        .eq('id', updatedWorkout.id);
+
+      if (error) throw error;
+      toast.success('Treino atualizado!');
+    } catch (e) {
+      console.error('Erro ao atualizar treino:', e);
+      toast.error('Erro ao atualizar treino');
+    }
+  };
+
+  const deleteWorkout = async (workoutId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('workout_logs')
+        .delete()
+        .eq('id', workoutId);
+
+      if (error) throw error;
+      toast.success('Treino excluído!');
+    } catch (e) {
+      console.error('Erro ao excluir treino:', e);
+      toast.error('Erro ao excluir treino');
     }
   };
 
@@ -211,6 +253,7 @@ const Index = () => {
             setActiveId(null);
             setView('dashboard');
           }}
+          lastWorkout={history.find(h => h.workoutId === activeId)}
         />
       )}
       
@@ -218,8 +261,17 @@ const Index = () => {
         <HistoryView 
           history={history}
           onBack={() => setView('dashboard')}
+          onEdit={(workout) => setEditingWorkout(workout)}
         />
       )}
+
+      <WorkoutEditModal
+        isOpen={!!editingWorkout}
+        onClose={() => setEditingWorkout(null)}
+        workout={editingWorkout}
+        onSave={updateWorkout}
+        onDelete={deleteWorkout}
+      />
       
       {view === 'progress' && (
         <ProgressView 

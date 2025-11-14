@@ -9,25 +9,50 @@ interface ProgressViewProps {
 
 export function ProgressView({ history, onBack }: ProgressViewProps) {
   const exerciseProgress = useMemo(() => {
-    const data: Record<string, { name: string; data: { date: string; weight: number }[] }> = {};
+    const data: Record<string, { name: string; data: { date: string; weight: number; volume: number }[] }> = {};
     
     [...history].reverse().forEach((log) => {
       if (!log.exercises) return;
+      const logDate = new Date(log.endTime).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      
       log.exercises.forEach((ex: any) => {
         if (!data[ex.exerciseId]) {
           data[ex.exerciseId] = { name: ex.exerciseName, data: [] };
         }
         const maxWeight = Math.max(...ex.sets.map((s: any) => Number(s.weight) || 0));
-        if (maxWeight > 0 && log.endTime?.seconds) {
+        const totalVolume = ex.sets.reduce((sum: number, s: any) => sum + (s.weight * s.reps), 0);
+        
+        if (maxWeight > 0) {
           data[ex.exerciseId].data.push({
-            date: new Date(log.endTime.seconds * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-            weight: maxWeight
+            date: logDate,
+            weight: maxWeight,
+            volume: totalVolume
           });
         }
       });
     });
     
     return data;
+  }, [history]);
+
+  const weeklyStats = useMemo(() => {
+    const last7Days = history.filter((log) => {
+      const logTime = new Date(log.endTime).getTime();
+      const now = Date.now();
+      const sevenDaysAgo = now - 7 * 24 * 3600 * 1000;
+      return logTime >= sevenDaysAgo;
+    });
+
+    const totalWorkouts = last7Days.length;
+    const totalVolume = last7Days.reduce((sum, log) => {
+      return sum + (log.exercises?.reduce((exSum: number, ex: any) => {
+        return exSum + ex.sets.reduce((setSum: number, s: any) => setSum + (s.weight * s.reps), 0);
+      }, 0) || 0);
+    }, 0);
+    
+    const totalDuration = last7Days.reduce((sum, log) => sum + (log.durationSeconds || 0), 0);
+
+    return { totalWorkouts, totalVolume, avgDuration: totalWorkouts > 0 ? Math.floor(totalDuration / totalWorkouts / 60) : 0 };
   }, [history]);
 
   const keyExercises = ['p1_supino_inc_halt', 'l1_agachamento', 'pl1_puxada_frente'];
@@ -40,6 +65,22 @@ export function ProgressView({ history, onBack }: ProgressViewProps) {
         </button>
         <h1 className="text-2xl font-bold text-foreground">Seu Progresso</h1>
       </header>
+
+      {/* Weekly Stats */}
+      <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="bg-card p-5 rounded-2xl shadow-sm border border-border text-center">
+          <p className="text-3xl font-bold text-primary">{weeklyStats.totalWorkouts}</p>
+          <p className="text-xs text-muted-foreground font-bold uppercase mt-1">Treinos</p>
+        </div>
+        <div className="bg-card p-5 rounded-2xl shadow-sm border border-border text-center">
+          <p className="text-3xl font-bold text-primary">{Math.floor(weeklyStats.totalVolume / 1000)}k</p>
+          <p className="text-xs text-muted-foreground font-bold uppercase mt-1">Volume (kg)</p>
+        </div>
+        <div className="bg-card p-5 rounded-2xl shadow-sm border border-border text-center">
+          <p className="text-3xl font-bold text-primary">{weeklyStats.avgDuration}</p>
+          <p className="text-xs text-muted-foreground font-bold uppercase mt-1">Média (min)</p>
+        </div>
+      </div>
 
       {history.length < 2 ? (
         <div className="flex flex-col items-center justify-center p-10 bg-card rounded-[2.5rem] shadow-sm border border-border text-center mt-10">

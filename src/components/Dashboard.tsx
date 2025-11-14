@@ -18,8 +18,8 @@ export function Dashboard({ onStart, history, workoutsThisWeek }: DashboardProps
   if (today === 6) sugId = 'PULL2'; // Sábado
   
   // Se já treinou hoje, sugere o próximo dia da sequência
-  if (history.length > 0 && history[0].endTime?.seconds) {
-    const lastWorkoutDate = new Date(history[0].endTime.seconds * 1000).toDateString();
+  if (history.length > 0 && history[0].endTime) {
+    const lastWorkoutDate = new Date(history[0].endTime).toDateString();
     const todayDate = new Date().toDateString();
     if (lastWorkoutDate === todayDate) {
       const lastId = history[0].workoutId;

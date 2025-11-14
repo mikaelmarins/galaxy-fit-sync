@@ -9,6 +9,7 @@ interface ActiveWorkoutProps {
   def: WorkoutDefinition;
   onFinish: (data: any) => void;
   onCancel: () => void;
+  lastWorkout?: any;
 }
 
 interface SetData {
@@ -29,13 +30,34 @@ function formatTime(s: number) {
     .padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 }
 
-export function ActiveWorkout({ def, onFinish, onCancel }: ActiveWorkoutProps) {
+export function ActiveWorkout({ def, onFinish, onCancel, lastWorkout }: ActiveWorkoutProps) {
   const playBeep = useBeep();
   const { savedState, saveState, clearState, isLoading } = useWorkoutPersist(def.id);
   
+  // Initialize sets with last workout weights if available
+  const getInitialSets = () => {
+    if (savedState?.sets) return savedState.sets;
+    
+    if (lastWorkout?.exercises) {
+      const initialSets: Record<string, SetData> = {};
+      lastWorkout.exercises.forEach((ex: any) => {
+        ex.sets.forEach((set: any, idx: number) => {
+          initialSets[`${ex.exerciseId}_${idx}`] = {
+            w: set.weight || 0,
+            r: set.reps || 0,
+            done: false
+          };
+        });
+      });
+      return initialSets;
+    }
+    
+    return {};
+  };
+  
   const [start] = useState(savedState?.startTime ? new Date(savedState.startTime) : new Date());
   const [elapsed, setElapsed] = useState(savedState?.elapsed || 0);
-  const [sets, setSets] = useState<Record<string, SetData>>(savedState?.sets || {});
+  const [sets, setSets] = useState<Record<string, SetData>>(getInitialSets());
   const [timer, setTimer] = useState<TimerData | null>(null);
   const [coreSets, setCoreSets] = useState<Record<string, boolean>>({});
   const [showCore, setShowCore] = useState(false);
