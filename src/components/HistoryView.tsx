@@ -3,11 +3,12 @@ import { ArrowLeft, Clock, Dumbbell } from 'lucide-react';
 interface HistoryViewProps {
   history: any[];
   onBack: () => void;
+  onEdit?: (log: any) => void;
 }
 
-function formatDate(ts: any) {
-  if (!ts?.seconds) return 'Data inválida';
-  return new Date(ts.seconds * 1000).toLocaleDateString('pt-BR', {
+function formatDate(date: Date | string) {
+  const d = date instanceof Date ? date : new Date(date);
+  return d.toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: 'short',
     hour: '2-digit',
@@ -19,7 +20,7 @@ function formatTime(s: number) {
   return `${Math.floor(s / 60)}min`;
 }
 
-export function HistoryView({ history, onBack }: HistoryViewProps) {
+export function HistoryView({ history, onBack, onEdit }: HistoryViewProps) {
   return (
     <div className="min-h-screen bg-background pb-32 px-6 pt-10">
       <header className="flex items-center gap-4 mb-10 mt-6">
@@ -40,7 +41,11 @@ export function HistoryView({ history, onBack }: HistoryViewProps) {
       ) : (
         <div className="space-y-4">
           {history.map((log) => (
-            <div key={log.id} className="bg-card p-5 rounded-[2rem] shadow-sm border border-border">
+            <div 
+              key={log.id} 
+              className="bg-card p-5 rounded-[2rem] shadow-sm border border-border cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => onEdit?.(log)}
+            >
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <h3 className="font-bold text-foreground text-lg">{log.workoutName}</h3>
