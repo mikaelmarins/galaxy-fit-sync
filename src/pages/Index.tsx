@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import type { User } from '@supabase/supabase-js';
 import { syncQueue, addToQueue } from '@/lib/offlineQueue';
 import { WorkoutId } from '@/lib/workoutData';
