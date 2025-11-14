@@ -15,7 +15,6 @@ interface WorkoutEditModalProps {
 
 export function WorkoutEditModal({ isOpen, onClose, workout, onSave, onDelete }: WorkoutEditModalProps) {
   const [exercises, setExercises] = useState(workout?.exercises || []);
-  const [userWeight, setUserWeight] = useState(workout?.userWeight || '');
 
   if (!workout) return null;
 
@@ -28,8 +27,7 @@ export function WorkoutEditModal({ isOpen, onClose, workout, onSave, onDelete }:
   const handleSave = () => {
     onSave({
       ...workout,
-      exercises,
-      userWeight: userWeight ? Number(userWeight) : null
+      exercises
     });
     onClose();
   };
@@ -58,19 +56,6 @@ export function WorkoutEditModal({ isOpen, onClose, workout, onSave, onDelete }:
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          <div>
-            <Label htmlFor="userWeight">Seu Peso (kg)</Label>
-            <Input
-              id="userWeight"
-              type="number"
-              step="0.1"
-              value={userWeight}
-              onChange={(e) => setUserWeight(e.target.value)}
-              placeholder="Ex: 75.5"
-              className="mt-2"
-            />
-          </div>
-
           {exercises.map((ex: any, exIdx: number) => (
             <div key={exIdx} className="bg-secondary/30 p-4 rounded-2xl">
               <h4 className="font-bold text-lg mb-3">{ex.exerciseName}</h4>

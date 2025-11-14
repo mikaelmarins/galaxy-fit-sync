@@ -171,8 +171,7 @@ const Index = () => {
       const { error } = await supabase
         .from('workout_logs')
         .update({
-          exercises: updatedWorkout.exercises,
-          user_weight: updatedWorkout.userWeight
+          exercises: updatedWorkout.exercises
         })
         .eq('id', updatedWorkout.id);
 
