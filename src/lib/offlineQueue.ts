@@ -1,5 +1,5 @@
 import localforage from 'localforage';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 
 interface QueuedWorkout {
   id: string;
