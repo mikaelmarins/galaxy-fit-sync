@@ -125,7 +125,7 @@ export function ActiveWorkout({ def, onFinish, onCancel, lastWorkout }: ActiveWo
     setExpandedEx(null);
   };
 
-  const finishWorkout = async () => {
+  const finishWorkout = async (bodyWeight: number | null) => {
     const coreDone = Object.keys(coreSets).length >= 3;
     await clearState();
     onFinish({
@@ -135,6 +135,7 @@ export function ActiveWorkout({ def, onFinish, onCancel, lastWorkout }: ActiveWo
       endTime: new Date(),
       durationSeconds: elapsed,
       coreDone,
+      userWeight: bodyWeight,
       exercises: def.exercises
         .map((ex) => ({
           exerciseId: ex.id,
@@ -398,7 +399,9 @@ function RestModal({ timer, onClose, onAdd }: { timer: TimerData; onClose: () =>
 }
 
 // ConfirmModal Component
-function ConfirmModal({ onCancel, onConfirm }: { onCancel: () => void; onConfirm: () => void }) {
+function ConfirmModal({ onCancel, onConfirm }: { onCancel: () => void; onConfirm: (weight: number | null) => void }) {
+  const [bodyWeight, setBodyWeight] = useState<string>('');
+  
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4 animate-in fade-in duration-200">
       <div className="bg-card p-8 rounded-[2.5rem] w-full max-w-sm text-center shadow-2xl animate-in slide-in-from-bottom duration-300">
@@ -406,15 +409,33 @@ function ConfirmModal({ onCancel, onConfirm }: { onCancel: () => void; onConfirm
           <Trophy className="text-yellow-500" size={40} fill="currentColor" />
         </div>
         <h3 className="text-2xl font-black text-foreground mb-3">Treino Concluído?</h3>
-        <p className="text-muted-foreground font-medium mb-8 leading-relaxed">
+        <p className="text-muted-foreground font-medium mb-6 leading-relaxed">
           Ótimo trabalho! Certifique-se de que todas as cargas foram registradas corretamente.
         </p>
+        
+        {/* Body Weight Input */}
+        <div className="mb-6 text-left">
+          <label htmlFor="bodyWeight" className="block text-sm font-bold text-foreground mb-2">
+            Peso Corporal (kg) - Opcional
+          </label>
+          <input
+            id="bodyWeight"
+            type="number"
+            inputMode="decimal"
+            step="0.1"
+            value={bodyWeight}
+            onChange={(e) => setBodyWeight(e.target.value)}
+            placeholder="Ex: 75.5"
+            className="w-full px-4 py-3 bg-secondary border-2 border-border rounded-xl text-foreground font-bold text-center focus:outline-none focus:border-primary transition-colors"
+          />
+        </div>
+        
         <div className="flex gap-3">
           <button onClick={onCancel} className="flex-1 py-4 bg-secondary hover:bg-secondary/80 text-foreground rounded-2xl font-bold transition-colors">
             Voltar
           </button>
           <button
-            onClick={onConfirm}
+            onClick={() => onConfirm(bodyWeight ? parseFloat(bodyWeight) : null)}
             className="flex-1 py-4 bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl font-bold transition-colors shadow-lg shadow-primary/20"
           >
             SALVAR TREINO
