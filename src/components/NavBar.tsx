@@ -1,18 +1,17 @@
-import { Home, History, TrendingUp, Dumbbell } from 'lucide-react';
+import { Home, History, TrendingUp } from 'lucide-react';
+import { NavLink } from '@/components/NavLink';
+import { useLocation } from 'react-router-dom';
 
-interface NavBarProps {
-  view: string;
-  setView: (view: string) => void;
-  activeId: string | null;
-}
-
-export function NavBar({ view, setView, activeId }: NavBarProps) {
-  if (view === 'workout' && activeId) return null;
+export function NavBar() {
+  const location = useLocation();
+  
+  // Hide navbar during active workout
+  if (location.pathname.startsWith('/workout/')) return null;
 
   const navItems = [
-    { id: 'dashboard', icon: Home, label: 'Início' },
-    { id: 'history', icon: History, label: 'Histórico' },
-    { id: 'progress', icon: TrendingUp, label: 'Progresso' }
+    { path: '/', icon: Home, label: 'Início' },
+    { path: '/history', icon: History, label: 'Histórico' },
+    { path: '/progress', icon: TrendingUp, label: 'Progresso' }
   ];
 
   return (
@@ -20,18 +19,20 @@ export function NavBar({ view, setView, activeId }: NavBarProps) {
       <div className="flex justify-around items-center h-20 px-6 pb-safe">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = view === item.id;
           return (
-            <button
-              key={item.id}
-              onClick={() => setView(item.id)}
-              className={`flex flex-col items-center gap-1 transition-colors ${
-                isActive ? 'text-primary' : 'text-muted-foreground'
-              }`}
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className="flex flex-col items-center gap-1 transition-colors text-muted-foreground"
+              activeClassName="text-primary"
             >
-              <Icon size={24} fill={isActive ? 'currentColor' : 'none'} />
-              <span className="text-xs font-bold">{item.label}</span>
-            </button>
+              {({ isActive }) => (
+                <>
+                  <Icon size={24} fill={isActive ? 'currentColor' : 'none'} />
+                  <span className="text-xs font-bold">{item.label}</span>
+                </>
+              )}
+            </NavLink>
           );
         })}
       </div>
