@@ -7,6 +7,14 @@ interface ProgressViewProps {
   onBack: () => void;
 }
 
+interface BodyWeightStats {
+  current: number | null;
+  weeklyChange: number;
+  monthlyChange: number;
+  min: number;
+  max: number;
+}
+
 export function ProgressView({ history, onBack }: ProgressViewProps) {
   const exerciseProgress = useMemo(() => {
     const data: Record<string, { name: string; data: { date: string; weight: number; volume: number }[] }> = {};
@@ -37,17 +45,48 @@ export function ProgressView({ history, onBack }: ProgressViewProps) {
 
   const bodyWeightProgress = useMemo(() => {
     return [...history]
-      .filter(log => log.userWeight)
+      .filter(log => log.user_weight)
       .reverse()
       .map(log => ({
-        date: new Date(log.endTime).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-        weight: log.userWeight
+        date: new Date(log.end_time).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+        weight: Number(log.user_weight)
       }));
+  }, [history]);
+
+  const bodyWeightStats = useMemo((): BodyWeightStats => {
+    const weightsWithDates = [...history]
+      .filter(log => log.user_weight)
+      .map(log => ({
+        weight: Number(log.user_weight),
+        date: new Date(log.end_time)
+      }))
+      .sort((a, b) => b.date.getTime() - a.date.getTime());
+
+    if (weightsWithDates.length === 0) {
+      return { current: null, weeklyChange: 0, monthlyChange: 0, min: 0, max: 0 };
+    }
+
+    const current = weightsWithDates[0].weight;
+    const allWeights = weightsWithDates.map(w => w.weight);
+    const min = Math.min(...allWeights);
+    const max = Math.max(...allWeights);
+
+    const now = Date.now();
+    const oneWeekAgo = now - 7 * 24 * 3600 * 1000;
+    const oneMonthAgo = now - 30 * 24 * 3600 * 1000;
+
+    const weekOldWeight = weightsWithDates.find(w => w.date.getTime() <= oneWeekAgo);
+    const monthOldWeight = weightsWithDates.find(w => w.date.getTime() <= oneMonthAgo);
+
+    const weeklyChange = weekOldWeight ? current - weekOldWeight.weight : 0;
+    const monthlyChange = monthOldWeight ? current - monthOldWeight.weight : 0;
+
+    return { current, weeklyChange, monthlyChange, min, max };
   }, [history]);
 
   const weeklyStats = useMemo(() => {
     const last7Days = history.filter((log) => {
-      const logTime = new Date(log.endTime).getTime();
+      const logTime = new Date(log.end_time).getTime();
       const now = Date.now();
       const sevenDaysAgo = now - 7 * 24 * 3600 * 1000;
       return logTime >= sevenDaysAgo;
@@ -60,7 +99,7 @@ export function ProgressView({ history, onBack }: ProgressViewProps) {
       }, 0) || 0);
     }, 0);
     
-    const totalDuration = last7Days.reduce((sum, log) => sum + (log.durationSeconds || 0), 0);
+    const totalDuration = last7Days.reduce((sum, log) => sum + (log.duration_seconds || 0), 0);
     const totalSets = last7Days.reduce((sum, log) => {
       return sum + (log.exercises?.reduce((exSum: number, ex: any) => exSum + ex.sets.length, 0) || 0);
     }, 0);
@@ -114,6 +153,89 @@ export function ProgressView({ history, onBack }: ProgressViewProps) {
         </button>
         <h1 className="text-2xl font-bold text-foreground">Seu Progresso</h1>
       </header>
+
+      {/* Body Weight Section */}
+      <div className="mb-8">
+        <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-4">Peso Corporal</h2>
+        
+        {bodyWeightStats.current !== null ? (
+          <>
+            {/* Current Weight & Changes */}
+            <div className="bg-card p-6 rounded-[2.5rem] shadow-sm border border-border mb-4">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider mb-1">Peso Atual</p>
+                  <p className="text-4xl font-bold text-foreground">{bodyWeightStats.current} <span className="text-xl text-muted-foreground">kg</span></p>
+                </div>
+                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center">
+                  <Weight size={32} className="text-primary" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-secondary/30 p-4 rounded-xl">
+                  <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider mb-1">Semanal</p>
+                  <p className={`text-2xl font-bold ${bodyWeightStats.weeklyChange > 0 ? 'text-red-500' : bodyWeightStats.weeklyChange < 0 ? 'text-green-500' : 'text-foreground'}`}>
+                    {bodyWeightStats.weeklyChange > 0 ? '+' : ''}{bodyWeightStats.weeklyChange.toFixed(1)} kg
+                  </p>
+                </div>
+                <div className="bg-secondary/30 p-4 rounded-xl">
+                  <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider mb-1">Mensal</p>
+                  <p className={`text-2xl font-bold ${bodyWeightStats.monthlyChange > 0 ? 'text-red-500' : bodyWeightStats.monthlyChange < 0 ? 'text-green-500' : 'text-foreground'}`}>
+                    {bodyWeightStats.monthlyChange > 0 ? '+' : ''}{bodyWeightStats.monthlyChange.toFixed(1)} kg
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider mb-1">Mínimo</p>
+                  <p className="text-lg font-bold text-foreground">{bodyWeightStats.min} kg</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider mb-1">Máximo</p>
+                  <p className="text-lg font-bold text-foreground">{bodyWeightStats.max} kg</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Body Weight Chart */}
+            {bodyWeightProgress.length >= 2 && (
+              <div className="bg-card p-6 rounded-[2.5rem] shadow-sm border border-border">
+                <h3 className="font-bold text-foreground mb-4">Evolução do Peso</h3>
+                <div className="h-56 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={bodyWeightProgress} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="grad_bodyweight" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                      <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} dy={10} />
+                      <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} dx={-10} domain={['dataMin - 2', 'dataMax + 2']} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '12px' }}
+                        cursor={false}
+                      />
+                      <Area type="monotone" dataKey="weight" stroke="hsl(var(--primary))" strokeWidth={3} fillOpacity={1} fill="url(#grad_bodyweight)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="bg-card p-8 rounded-[2.5rem] shadow-sm border border-border text-center">
+            <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mb-4 mx-auto">
+              <Weight size={24} className="text-muted-foreground" />
+            </div>
+            <h3 className="font-bold text-foreground text-lg mb-2">Nenhum registro de peso</h3>
+            <p className="text-muted-foreground text-sm">Registre seu peso ao finalizar um treino para acompanhar sua evolução.</p>
+          </div>
+        )}
+      </div>
 
       {/* Weekly Stats */}
       <div className="mb-6">
@@ -207,45 +329,10 @@ export function ProgressView({ history, onBack }: ProgressViewProps) {
             <TrendingUp size={32} className="text-muted-foreground" />
           </div>
           <h3 className="font-bold text-foreground text-lg mb-2">Ainda sem dados suficientes</h3>
-          <p className="text-muted-foreground">Complete mais alguns treinos para ver seus gráficos.</p>
+          <p className="text-muted-foreground">Complete mais alguns treinos para ver seus gráficos de exercícios.</p>
         </div>
       ) : (
         <div className="space-y-8">
-          {/* Body Weight Progress */}
-          {bodyWeightProgress.length >= 2 && (
-            <div className="bg-card p-6 rounded-[2.5rem] shadow-sm border border-border">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
-                  <Weight size={20} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-foreground">Peso Corporal</h3>
-                  <p className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Evolução (kg)</p>
-                </div>
-              </div>
-              <div className="h-48 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={bodyWeightProgress} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="grad_bodyweight" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} dy={10} />
-                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} dx={-10} domain={['dataMin - 2', 'dataMax + 2']} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '12px' }}
-                      cursor={false}
-                    />
-                    <Area type="monotone" dataKey="weight" stroke="hsl(var(--primary))" strokeWidth={3} fillOpacity={1} fill="url(#grad_bodyweight)" />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          )}
-
           {/* Exercise Progress */}
           {keyExercises.map((exId) => {
             const exData = exerciseProgress[exId];
