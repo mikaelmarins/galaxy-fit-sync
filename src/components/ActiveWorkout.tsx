@@ -96,7 +96,7 @@ export function ActiveWorkout({ def, onFinish, onCancel, lastWorkout }: ActiveWo
     return () => clearInterval(i);
   }, [timer, playBeep]);
 
-  // Persist workout state
+  // Persist workout state (only when sets change, not every second)
   useEffect(() => {
     if (!isLoading) {
       saveState({
@@ -106,7 +106,7 @@ export function ActiveWorkout({ def, onFinish, onCancel, lastWorkout }: ActiveWo
         elapsed
       });
     }
-  }, [sets, elapsed, def.id, start, saveState, isLoading]);
+  }, [sets, def.id, start, saveState, isLoading]); // Removed 'elapsed' to prevent saving every second
 
   const doSet = (eid: string, idx: number, w: number, r: number, rest: number, name: string, totalSets: number) => {
     setSets((p) => ({ ...p, [`${eid}_${idx}`]: { w, r, done: true } }));
