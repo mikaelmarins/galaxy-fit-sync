@@ -330,7 +330,9 @@ function SetRow({ idx, target, done, onEdit, weight, reps }: SetRowProps) {
       >
         <span className="opacity-70">#{idx + 1}</span>
         <span className="text-base">{weight}kg × {reps} reps</span>
-        <CheckCircle size={20} fill="currentColor" className="text-green-600 dark:text-green-400" />
+        <div className="w-12 h-12 bg-green-600 dark:bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+          <CheckCircle size={28} fill="white" className="text-white" strokeWidth={3} />
+        </div>
       </button>
     );
   }
@@ -344,8 +346,8 @@ function SetRow({ idx, target, done, onEdit, weight, reps }: SetRowProps) {
       <span className="text-muted-foreground text-sm">
         {weight && reps ? `${weight}kg × ${reps}` : 'Tocar para registrar'}
       </span>
-      <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
-        <CheckCircle size={20} className="text-primary" />
+      <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+        <CheckCircle size={24} className="text-primary" strokeWidth={2.5} />
       </div>
     </button>
   );
